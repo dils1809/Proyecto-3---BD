@@ -49,6 +49,16 @@ def reporte1():
         query = construir_query(fecha_inicio, fecha_fin, medico, especialidad, sexo, edad_min, edad_max)
         resultados = db.session.execute(text(query)).fetchall()
 
+        print("Formulario recibido:")
+        print("Fecha inicio:", fecha_inicio)
+        print("Fecha fin:", fecha_fin)
+        print("Médico:", medico)
+        print("Especialidad:", especialidad)
+        print("Sexo:", sexo)
+        print("Edad mínima:", edad_min)
+        print("Edad máxima:", edad_max)
+
+
     return render_template('reporte1.html', resultados=resultados)
 
 @app.route('/reporte1/excel', methods=['POST'])
