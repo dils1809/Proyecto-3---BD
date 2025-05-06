@@ -111,3 +111,10 @@ INSERT INTO Alergias (idPaciente, alergia) VALUES
 (3, 'Mariscos'),
 (4, 'Polvo'),
 (5, 'Lácteos');
+
+INSERT INTO logmedica (idlog, idmedica, accion, fecha) VALUES
+(1, 1, 'administrado', '2024-05-01'),
+(2, 1, 'administrado', '2024-05-05'),
+(3, 1, 'administrado', '2024-06-10'),
+(4, 1, 'administrado', '2024-07-15'),
+(5, 1, 'administrado', '2024-08-01');

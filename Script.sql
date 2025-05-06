@@ -61,3 +61,21 @@ CREATE TABLE Turno (
   horaIni TIME,
   horaFin TIME
 );
+
+
+SELECT 
+  e.nombre AS especialidad, 
+  med.nombre AS medicamento, 
+  COUNT(*) AS cantidad
+FROM logmedica lm
+JOIN medica med ON lm.idmedica = med.idmedica
+JOIN trata t ON med.idtrata = t.idtrata
+JOIN diag d ON t.iddiag = d.iddiag
+JOIN cita c ON d.idcita = c.idcita
+JOIN paciente p ON c.idpaciente = p.idpaciente
+JOIN medico m ON c.idmedico = m.idmedico
+JOIN espec e ON m.idespec = e.idespec
+GROUP BY e.nombre, med.nombre
+ORDER BY cantidad DESC;
+
+SELECT * FROM logmedica LIMIT 10;
