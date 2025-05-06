@@ -63,6 +63,17 @@
             <label class="form-icon-label"><i class="fas fa-stethoscope me-1"></i>Especialidad</label>
             <input type="text" name="especialidad" class="form-control" placeholder="Ej: Pediatría">
           </div>
+          
+          <div class="col-md-3">
+            <label class="form-icon-label"><i class="fas fa-venus-mars me-1"></i>Sexo del Paciente</label>
+            <select name="sexo" class="form-select">
+              <option value="">Todos</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+            </select>
+          </div>
+          
+
           <div class="col-12 text-end">
             <button type="submit" class="btn btn-primary mt-3">
               <i class="fas fa-search me-1"></i> Generar Reporte
@@ -71,6 +82,42 @@
         </form>
       </div>
     </div>
+
+    <div class="col-12 text-end mt-2">
+      <form method="post" action="/reporte1/excel" style="display: inline;">
+        <input type="hidden" name="fecha_inicio" value="{{ request.form.fecha_inicio }}">
+        <input type="hidden" name="fecha_fin" value="{{ request.form.fecha_fin }}">
+        <input type="hidden" name="medico" value="{{ request.form.medico }}">
+        <input type="hidden" name="especialidad" value="{{ request.form.especialidad }}">
+        <input type="hidden" name="sexo" value="{{ request.form.sexo }}">
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-file-excel me-1"></i> Exportar Excel
+        </button>
+      </form>
+    
+      <form method="post" action="/reporte1/pdf" style="display: inline;">
+        <input type="hidden" name="fecha_inicio" value="{{ request.form.fecha_inicio }}">
+        <input type="hidden" name="fecha_fin" value="{{ request.form.fecha_fin }}">
+        <input type="hidden" name="medico" value="{{ request.form.medico }}">
+        <input type="hidden" name="especialidad" value="{{ request.form.especialidad }}">
+        <input type="hidden" name="sexo" value="{{ request.form.sexo }}">
+        <button type="submit" class="btn btn-danger">
+          <i class="fas fa-file-pdf me-1"></i> Exportar PDF
+        </button>
+      </form>
+    
+      <form method="post" action="/reporte1/grafica" style="display: inline;">
+        <input type="hidden" name="fecha_inicio" value="{{ request.form.fecha_inicio }}">
+        <input type="hidden" name="fecha_fin" value="{{ request.form.fecha_fin }}">
+        <input type="hidden" name="medico" value="{{ request.form.medico }}">
+        <input type="hidden" name="especialidad" value="{{ request.form.especialidad }}">
+        <input type="hidden" name="sexo" value="{{ request.form.sexo }}">
+        <button type="submit" class="btn btn-info text-white">
+          <i class="fas fa-chart-bar me-1"></i> Ver Gráfica
+        </button>
+      </form>
+    </div>
+    
 
     <!-- Resultados del Reporte -->
     {% if resultados %}
