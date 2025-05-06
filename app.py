@@ -74,20 +74,21 @@ def reporte2():
 
         query = f"""
         SELECT e.nombre AS especialidad, med.nombre AS medicamento, COUNT(*) AS cantidad
-        FROM receta r
-        JOIN cita c ON r.idcita = c.idcita
+        FROM logmedica lm
+        JOIN medica med ON lm.idmedica = med.idmedica
+        JOIN trata t ON med.idtrata = t.idtrata
+        JOIN diag d ON t.iddiag = d.iddiag
+        JOIN cita c ON d.idcita = c.idcita
         JOIN paciente p ON c.idpaciente = p.idpaciente
         JOIN medico m ON c.idmedico = m.idmedico
         JOIN espec e ON m.idespec = e.idespec
-        JOIN medicamento med ON r.idmed = med.idmed
-        WHERE r.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
+        WHERE lm.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
         AND med.nombre ILIKE '%{medicamento}%'
         AND m.nombre ILIKE '%{medico}%'
         AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.fechanac)) BETWEEN {edad_min} AND {edad_max}
         GROUP BY e.nombre, med.nombre
         ORDER BY cantidad DESC
         """
-
         resultados = db.session.execute(text(query)).fetchall()
 
     return render_template('reporte2.html', resultados=resultados)
@@ -103,13 +104,15 @@ def reporte2_excel():
 
     query = f"""
     SELECT e.nombre AS especialidad, med.nombre AS medicamento, COUNT(*) AS cantidad
-    FROM receta r
-    JOIN cita c ON r.idcita = c.idcita
+    FROM logmedica lm
+    JOIN medica med ON lm.idmedica = med.idmedica
+    JOIN trata t ON med.idtrata = t.idtrata
+    JOIN diag d ON t.iddiag = d.iddiag
+    JOIN cita c ON d.idcita = c.idcita
     JOIN paciente p ON c.idpaciente = p.idpaciente
     JOIN medico m ON c.idmedico = m.idmedico
     JOIN espec e ON m.idespec = e.idespec
-    JOIN medicamento med ON r.idmed = med.idmed
-    WHERE r.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
+    WHERE lm.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
     AND med.nombre ILIKE '%{medicamento}%'
     AND m.nombre ILIKE '%{medico}%'
     AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.fechanac)) BETWEEN {edad_min} AND {edad_max}
@@ -134,13 +137,15 @@ def reporte2_pdf():
 
     query = f"""
     SELECT e.nombre AS especialidad, med.nombre AS medicamento, COUNT(*) AS cantidad
-    FROM receta r
-    JOIN cita c ON r.idcita = c.idcita
+    FROM logmedica lm
+    JOIN medica med ON lm.idmedica = med.idmedica
+    JOIN trata t ON med.idtrata = t.idtrata
+    JOIN diag d ON t.iddiag = d.iddiag
+    JOIN cita c ON d.idcita = c.idcita
     JOIN paciente p ON c.idpaciente = p.idpaciente
     JOIN medico m ON c.idmedico = m.idmedico
     JOIN espec e ON m.idespec = e.idespec
-    JOIN medicamento med ON r.idmed = med.idmed
-    WHERE r.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
+    WHERE lm.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
     AND med.nombre ILIKE '%{medicamento}%'
     AND m.nombre ILIKE '%{medico}%'
     AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.fechanac)) BETWEEN {edad_min} AND {edad_max}
@@ -182,13 +187,15 @@ def reporte2_grafica():
 
     query = f"""
     SELECT med.nombre AS medicamento, COUNT(*) AS cantidad
-    FROM receta r
-    JOIN cita c ON r.idcita = c.idcita
+    FROM logmedica lm
+    JOIN medica med ON lm.idmedica = med.idmedica
+    JOIN trata t ON med.idtrata = t.idtrata
+    JOIN diag d ON t.iddiag = d.iddiag
+    JOIN cita c ON d.idcita = c.idcita
     JOIN paciente p ON c.idpaciente = p.idpaciente
     JOIN medico m ON c.idmedico = m.idmedico
     JOIN espec e ON m.idespec = e.idespec
-    JOIN medicamento med ON r.idmed = med.idmed
-    WHERE r.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
+    WHERE lm.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
     AND med.nombre ILIKE '%{medicamento}%'
     AND m.nombre ILIKE '%{medico}%'
     AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.fechanac)) BETWEEN {edad_min} AND {edad_max}
@@ -210,6 +217,7 @@ def reporte2_grafica():
     plt.savefig(img, format='png')
     img.seek(0)
     return send_file(img, mimetype='image/png')
+
 
 
 @app.route('/reporte1/excel', methods=['POST'])
