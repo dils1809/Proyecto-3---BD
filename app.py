@@ -1,22 +1,37 @@
-from flask import Flask, render_template, request
-from sqlalchemy import text
-from flask_sqlalchemy import SQLAlchemy
-from config import Config
 from flask import Flask, render_template, request, send_file
 from flask_sqlalchemy import SQLAlchemy
+from config import Config
 from sqlalchemy import text
 import pandas as pd
 import matplotlib.pyplot as plt
-import io
 from reportlab.pdfgen import canvas
-import os
+import io
 
 app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
+def construir_query(fecha_inicio, fecha_fin, medico, especialidad, sexo, edad_min, edad_max):
+    edad_min = edad_min or 0
+    edad_max = edad_max or 150
+
+    return f"""
+    SELECT m.nombre AS medico, e.nombre AS especialidad, COUNT(*) AS cantidad_consultas
+    FROM cita c
+    JOIN medico m ON c.idmedico = m.idmedico
+    JOIN espec e ON m.idespec = e.idespec
+    JOIN paciente p ON c.idpaciente = p.idpaciente
+    WHERE c.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
+    AND m.nombre ILIKE '%{medico}%'
+    AND e.nombre ILIKE '%{especialidad}%'
+    AND p.sexo ILIKE '%{sexo}%'
+    AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.fechanac)) BETWEEN {edad_min} AND {edad_max}
+    GROUP BY m.nombre, e.nombre
+    ORDER BY cantidad_consultas DESC
+    """
+
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
 
 @app.route('/reporte1', methods=['GET', 'POST'])
@@ -28,20 +43,10 @@ def reporte1():
         medico = request.form['medico']
         especialidad = request.form['especialidad']
         sexo = request.form['sexo']
+        edad_min = request.form.get('edad_min')
+        edad_max = request.form.get('edad_max')
 
-        query = f"""
-        SELECT m.nombre AS medico, e.nombre AS especialidad, COUNT(*) AS cantidad_consultas
-        FROM cita c
-        JOIN medico m ON c.idmedico = m.idmedico
-        JOIN espec e ON m.idespec = e.idespec
-        JOIN paciente p ON c.idpaciente = p.idpaciente
-        WHERE c.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
-        AND m.nombre ILIKE '%{medico}%'
-        AND e.nombre ILIKE '%{especialidad}%'
-        AND p.sexo ILIKE '%{sexo}%'
-        GROUP BY m.nombre, e.nombre
-        ORDER BY cantidad_consultas DESC
-        """
+        query = construir_query(fecha_inicio, fecha_fin, medico, especialidad, sexo, edad_min, edad_max)
         resultados = db.session.execute(text(query)).fetchall()
 
     return render_template('reporte1.html', resultados=resultados)
@@ -53,22 +58,14 @@ def exportar_excel():
     medico = request.form['medico']
     especialidad = request.form['especialidad']
     sexo = request.form['sexo']
+    edad_min = request.form.get('edad_min')
+    edad_max = request.form.get('edad_max')
 
-    query = f"""
-    SELECT m.nombre AS medico, e.nombre AS especialidad, COUNT(*) AS cantidad_consultas
-    FROM cita c
-    JOIN medico m ON c.idmedico = m.idmedico
-    JOIN espec e ON m.idespec = e.idespec
-    JOIN paciente p ON c.idpaciente = p.idpaciente
-    WHERE c.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
-    AND m.nombre ILIKE '%{medico}%'
-    AND e.nombre ILIKE '%{especialidad}%'
-    AND p.sexo ILIKE '%{sexo}%'
-    GROUP BY m.nombre, e.nombre
-    ORDER BY cantidad_consultas DESC
-    """
+    query = construir_query(fecha_inicio, fecha_fin, medico, especialidad, sexo, edad_min, edad_max)
+    conn = db.engine.connect()
+    df = pd.read_sql(query, conn)
+    conn.close()
 
-    df = pd.read_sql(text(query), db.session.bind)
     output = io.BytesIO()
     df.to_excel(output, index=False)
     output.seek(0)
@@ -81,55 +78,47 @@ def exportar_pdf():
     medico = request.form['medico']
     especialidad = request.form['especialidad']
     sexo = request.form['sexo']
+    edad_min = request.form.get('edad_min')
+    edad_max = request.form.get('edad_max')
 
-    query = f"""
-    SELECT m.nombre AS medico, e.nombre AS especialidad, COUNT(*) AS cantidad_consultas
-    FROM cita c
-    JOIN medico m ON c.idmedico = m.idmedico
-    JOIN espec e ON m.idespec = e.idespec
-    JOIN paciente p ON c.idpaciente = p.idpaciente
-    WHERE c.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
-    AND m.nombre ILIKE '%{medico}%'
-    AND e.nombre ILIKE '%{especialidad}%'
-    AND p.sexo ILIKE '%{sexo}%'
-    GROUP BY m.nombre, e.nombre
-    ORDER BY cantidad_consultas DESC
-    """
-
-    resultados = db.session.execute(text(query)).fetchall()
+    query = construir_query(fecha_inicio, fecha_fin, medico, especialidad, sexo, edad_min, edad_max)
+    conn = db.engine.connect()
+    resultados = conn.execute(text(query)).fetchall()
 
     output = io.BytesIO()
     p = canvas.Canvas(output)
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 800, "Reporte: Consultas por Médico")
-    p.drawString(100, 780, f"Rango: {fecha_inicio} a {fecha_fin}")
-    y = 750
-    p.drawString(100, y, "Médico")
-    p.drawString(250, y, "Especialidad")
-    p.drawString(400, y, "Consultas")
-    y -= 20
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(100, 800, "Reporte de Consultas por Médico")
+    p.setFont("Helvetica", 10)
+    y = 760
 
-    for row in resultados:
-        p.drawString(100, y, str(row.medico))
-        p.drawString(250, y, str(row.especialidad))
-        p.drawString(400, y, str(row.cantidad_consultas))
-        y -= 20
-        if y < 50:
-            p.showPage()
-            y = 800
+    if resultados:
+        for row in resultados:
+            p.drawString(80, y, f"{row.medico} - {row.especialidad} - {row.cantidad_consultas}")
+            y -= 20
+            if y < 50:
+                p.showPage()
+                y = 800
+    else:
+        p.drawString(100, y, "No se encontraron resultados.")
 
-    p.showPage()
     p.save()
     output.seek(0)
     return send_file(output, download_name="reporte_consultas.pdf", as_attachment=True)
 
 @app.route('/reporte1/grafica', methods=['POST'])
-def reporte1_grafica():
+def reporte_grafica():
     fecha_inicio = request.form['fecha_inicio']
     fecha_fin = request.form['fecha_fin']
     medico = request.form['medico']
     especialidad = request.form['especialidad']
     sexo = request.form['sexo']
+    edad_min = request.form.get('edad_min')
+    edad_max = request.form.get('edad_max')
+
+    # Usamos solo médico y cantidad para la gráfica
+    edad_min = edad_min or 0
+    edad_max = edad_max or 150
 
     query = f"""
     SELECT m.nombre AS medico, COUNT(*) AS cantidad_consultas
@@ -141,17 +130,20 @@ def reporte1_grafica():
     AND m.nombre ILIKE '%{medico}%'
     AND e.nombre ILIKE '%{especialidad}%'
     AND p.sexo ILIKE '%{sexo}%'
+    AND EXTRACT(YEAR FROM AGE(CURRENT_DATE, p.fechanac)) BETWEEN {edad_min} AND {edad_max}
     GROUP BY m.nombre
     ORDER BY cantidad_consultas DESC
     """
 
-    df = pd.read_sql(text(query), db.session.bind)
+    conn = db.engine.connect()
+    df = pd.read_sql(query, conn)
+    conn.close()
 
     plt.figure(figsize=(10, 6))
     plt.bar(df['medico'], df['cantidad_consultas'])
+    plt.title('Consultas por Médico')
     plt.xlabel('Médico')
-    plt.ylabel('Consultas')
-    plt.title('Cantidad de Consultas por Médico')
+    plt.ylabel('Cantidad de Consultas')
     plt.xticks(rotation=45)
     plt.tight_layout()
 
@@ -160,7 +152,5 @@ def reporte1_grafica():
     img.seek(0)
     return send_file(img, mimetype='image/png')
 
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
