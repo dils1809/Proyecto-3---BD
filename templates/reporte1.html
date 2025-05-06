@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte 1 - Consultas por Médico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #0d6efd;
+    }
+    .subtitle {
+      font-size: 1.1rem;
+      color: #6c757d;
+    }
+    .card-custom {
+      border: none;
+      border-radius: 1rem;
+      box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.05);
+    }
+    .form-icon-label {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    .table th, .table td {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="text-center mb-5">
+      <i class="fas fa-user-md fa-3x text-primary mb-3"></i>
+      <div class="page-title">Reporte: Consultas por Médico</div>
+      <p class="subtitle">Filtra la información por fechas, médico o especialidad para generar el reporte.</p>
+    </div>
+
+    <!-- Formulario con Filtros -->
+    <div class="card card-custom mb-5">
+      <div class="card-body">
+        <h5 class="mb-4 text-primary"><i class="fas fa-filter me-2"></i>Filtros del Reporte</h5>
+        <form method="post" action="/reporte1" class="row g-3">
+
+          <div class="col-md-3">
+            <label class="form-icon-label"><i class="fas fa-calendar-alt me-1"></i>Fecha inicio</label>
+            <input type="date" name="fecha_inicio" class="form-control" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-icon-label"><i class="fas fa-calendar-check me-1"></i>Fecha fin</label>
+            <input type="date" name="fecha_fin" class="form-control" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-icon-label"><i class="fas fa-user me-1"></i>Médico</label>
+            <input type="text" name="medico" class="form-control" placeholder="Nombre del médico">
+          </div>
+          <div class="col-md-3">
+            <label class="form-icon-label"><i class="fas fa-stethoscope me-1"></i>Especialidad</label>
+            <input type="text" name="especialidad" class="form-control" placeholder="Ej: Pediatría">
+          </div>
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary mt-3">
+              <i class="fas fa-search me-1"></i> Generar Reporte
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Resultados del Reporte -->
+    {% if resultados %}
+      <div class="card card-custom">
+        <div class="card-body">
+          <h5 class="mb-4 text-success"><i class="fas fa-chart-bar me-2"></i>Resultados del Reporte</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+              <thead class="table-primary text-center">
+                <tr>
+                  <th>Médico</th>
+                  <th>Especialidad</th>
+                  <th>Cantidad de Consultas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in resultados %}
+                  <tr>
+                    <td>{{ row.medico }}</td>
+                    <td>{{ row.especialidad }}</td>
+                    <td class="text-center">{{ row.cantidad_consultas }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="alert alert-warning text-center mt-4" role="alert">
+        <i class="fas fa-exclamation-circle me-1"></i> No se encontraron resultados con esos filtros.
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

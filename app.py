@@ -1,6 +1,11 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 from flask_sqlalchemy import SQLAlchemy
-from config import Config
+from sqlalchemy import text
+import pandas as pd
+import matplotlib.pyplot as plt
+import io
+from reportlab.pdfgen import canvas
+import os
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -30,7 +35,8 @@ def reporte1():
         GROUP BY m.nombre, e.nombre
         ORDER BY cantidad_consultas DESC;
         """
-        resultados = db.session.execute(query).fetchall()
+        resultados = db.session.execute(text(query)).fetchall()
+
 
     return render_template('reporte1.html', resultados=resultados)
 
